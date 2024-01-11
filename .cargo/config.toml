@@ -1,5 +1,7 @@
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
-runner = "probe-run --chip nRF52833_xxAA"
+runner = "probe-rs run --chip nRF52833_xxAA --protocol swd"
+
+rustflags = ["-C", "linker=flip-link"]
 
 [build]
 target = "thumbv7em-none-eabihf"
