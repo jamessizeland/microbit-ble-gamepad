@@ -23,10 +23,11 @@ nrf-softdevice = { git = "https://github.com/embassy-rs/nrf-softdevice.git", fea
     "nrf52833",
     "defmt",
 ] }
-embassy-nrf = { version = "0.1.0", default-features = false, features = [
+embassy-nrf = { version = "0.1.0", features = [
     "nrf52833",
     "gpiote",
     "time-driver-rtc1",
+    "defmt",
 ] }
 embassy-sync = { version = "0.5.0", default-features = false }
 embassy-futures = { version = "0.1.0", default-features = false }

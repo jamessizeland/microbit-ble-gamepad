@@ -44,14 +44,14 @@ async fn main(spawner: Spawner) {
     let advertiser = advertiser::AdvertiserBuilder::new(name).build();
     info!("Built Advertiser");
     let mut display = board.display;
-    // display.set_brightness(display::Brightness::MAX);
-    // display.scroll("BLE!").await;
+    display.set_brightness(display::Brightness::MAX);
+    display.scroll("BLE!").await;
 
     defmt::unwrap!(spawner.spawn(softdevice_task(sd)));
     loop {
-        // display.scroll("?").await;
+        display.scroll("Searching").await;
         let conn = defmt::unwrap!(advertiser.advertise(sd).await); // advertise for connections
-                                                                   // display.scroll("Connected").await;
+        display.scroll("Connected").await;
         let gatt = gatt_server_task(server, &conn);
         let bas = notify_battery_level(server, &conn, &mut saadc);
         pin_mut!(gatt, bas);
