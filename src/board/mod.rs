@@ -1,14 +1,17 @@
-use crate::display::LedMatrix as LedMatrixDriver;
-use embassy_nrf::{
-    gpio::{AnyPin, Input, Level, Output, OutputDrive, Pin, Pull},
-    peripherals::{
-        P0_00, P0_01, P0_03, P0_04, P0_05, P0_06, P0_08, P0_09, P0_10, P0_12, P0_13, P0_16, P0_17,
-        P0_20, P0_26, P1_00, P1_02, P1_08, PPI_CH0, PPI_CH1, PWM0, RNG, SAADC, TIMER0, TWISPI0,
-        UARTE0,
-    },
-};
+pub mod display;
+mod speaker;
 
-pub use embassy_nrf::{config::Config, interrupt::Priority};
+use display::LedMatrix as LedMatrixDriver;
+use embassy_nrf::{
+    bind_interrupts,
+    gpio::{AnyPin, Input, Level, Output, OutputDrive, Pin, Pull},
+    interrupt::{self, InterruptExt},
+    peripherals::{
+        P0_00, P0_01, P0_03, P0_04, P0_05, P0_06, P0_08, P0_12, P0_13, P0_16, P0_17, P0_20, P0_26,
+        P0_29, P1_00, P1_02, P1_08, PPI_CH0, PPI_CH1, PWM0, RNG, SAADC, TIMER0, TWISPI0, UARTE0,
+    },
+    saadc::{self, Input as _, Saadc},
+};
 
 /// LED matrix peripheral for the micro:bit
 pub type LedMatrix = LedMatrixDriver<Output<'static, AnyPin>, 5, 5>;
@@ -33,16 +36,14 @@ pub struct Microbit {
     /// Microphone pin
     pub microphone: P0_05,
     /// Microphone pin enable
-    pub micen: P0_20,
+    pub mic_en: P0_20,
+    /// ADC pin (Battery voltage)
+    pub adc_pin: P0_29,
 
     /// P1 connector pin
     pub p1: P0_03,
     /// P2 connector pin
     pub p2: P0_04,
-    /// P8 connector pin
-    pub p8: P0_10,
-    /// P9 connector pin
-    pub p9: P0_09,
     /// P12 connector pin
     pub p12: P0_12,
     /// P13 connector pin
@@ -115,11 +116,10 @@ impl Microbit {
             timer0: p.TIMER0,
             speaker: p.P0_00,
             microphone: p.P0_05,
-            micen: p.P0_20,
+            mic_en: p.P0_20,
+            adc_pin: p.P0_29,
             p1: p.P0_03,
             p2: p.P0_04,
-            p8: p.P0_10,
-            p9: p.P0_09,
             p12: p.P0_12,
             p13: p.P0_17,
             p14: p.P0_01,
@@ -143,4 +143,20 @@ impl Microbit {
 
 fn output_pin(pin: AnyPin) -> Output<'static, AnyPin> {
     Output::new(pin, Level::Low, OutputDrive::Standard)
+}
+
+pub fn input_pin(pin: AnyPin) -> Input<'static, AnyPin> {
+    Input::new(pin, Pull::Up)
+}
+
+bind_interrupts!(struct Irqs {
+    SAADC => saadc::InterruptHandler;
+});
+
+/// Initialize the analog digital converter pins
+pub fn init_adc(pin: saadc::AnyInput, adc: SAADC) -> Saadc<'static, 1> {
+    let config = embassy_nrf::saadc::Config::default();
+    interrupt::SAADC.set_priority(interrupt::Priority::P3);
+    let channel_cfg = saadc::ChannelConfig::single_ended(pin.degrade_saadc());
+    saadc::Saadc::new(adc, Irqs, config, [channel_cfg])
 }
