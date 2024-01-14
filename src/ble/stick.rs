@@ -7,7 +7,10 @@ use embassy_nrf::{
 use embassy_time::{Duration, Timer};
 use nrf_softdevice::ble::Connection;
 
-use crate::io::Irqs;
+use crate::io::{
+    display::{AsyncDisplay, DisplayFrame},
+    Irqs,
+};
 
 use super::gatt::GamepadServer;
 
@@ -42,7 +45,7 @@ impl Axis {
         }
     }
     fn changed(&mut self, new_raw: i16) -> Option<i8> {
-        let new = ((new_raw - self.offset) / 370) as i8;
+        let new = -((new_raw - self.offset) / self.divider) as i8; // invert the value
         if new != self.old {
             self.old = new;
             Some(new as i8)
@@ -56,26 +59,37 @@ pub async fn analog_stick_task(
     server: &GamepadServer,
     connection: &Connection,
     saadc: &mut Saadc<'_, 2>,
+    display: &AsyncDisplay,
 ) {
     let debounce = Duration::from_millis(20);
     info!("analog stick service online");
     let mut buf = [0i16; 2];
     saadc.calibrate().await;
     saadc.sample(&mut buf).await;
-    // full range around 1870, so divide by 370 to get a range of -5 to 5
-    let divider = 370;
+    // full range around 1870, so divide by 640 to get a range of -3 to 3
+    let divider = 640;
     let mut x_axis = Axis::new(buf[0], divider);
     let mut y_axis = Axis::new(buf[1], divider);
     loop {
         // read adc values for x and y, and if they have changed by a certain amount, notify
-        // we are reducing the number of analogue stick levels to a range of -5 to 5
+        // we are reducing the number of analogue stick levels to a range of -3 to 3
         saadc.sample(&mut buf).await;
+        // display the x and y values on the led matrix
         if let Some(x) = x_axis.changed(buf[0]) {
             server.stick.x_notify(connection, &x).ok();
         }
         if let Some(y) = y_axis.changed(buf[1]) {
             server.stick.y_notify(connection, &y).ok();
         }
+        display
+            .display(
+                DisplayFrame::Coord {
+                    x: x_axis.old,
+                    y: y_axis.old,
+                },
+                Duration::from_millis(5),
+            )
+            .await;
         Timer::after(debounce).await;
     }
 }

@@ -15,8 +15,11 @@ pub mod bitmap;
 
 pub static DISPLAY_CHANNEL: Channel<ThreadModeRawMutex, DisplayAction, 64> = Channel::new();
 
+type DisplayQueue = Sender<'static, ThreadModeRawMutex, DisplayAction, 64>;
+
+#[derive(Clone, Copy)]
 pub struct AsyncDisplay {
-    sender: Sender<'static, ThreadModeRawMutex, DisplayAction, 64>,
+    sender: DisplayQueue,
 }
 
 impl AsyncDisplay {
@@ -54,6 +57,12 @@ impl AsyncDisplay {
 
 pub enum DisplayFrame {
     DisplayFrame(Frame<5, 5>),
+    /// Display a single pixel at the given coordinates, where (0,0) is the center of the display.
+    Coord {
+        x: i8,
+        y: i8,
+    },
+    Letter(char),
     Heart,
     Smile,
     Sad,
@@ -76,6 +85,26 @@ impl DisplayFrame {
             DisplayFrame::Right => ARROW_RIGHT,
             DisplayFrame::Up => ARROW_UP,
             DisplayFrame::Down => ARROW_DOWN,
+            DisplayFrame::Coord { x, y } => {
+                let mut frame = Frame::empty();
+                // convert from cartesian coordinates to display coordinates
+                let x = (x + 2).clamp(0, 5);
+                let y = (y + 2).clamp(0, 5);
+                frame.set(x as usize, y as usize);
+                frame
+            }
+            DisplayFrame::Letter(c) => {
+                // temporary
+                match c {
+                    'A' => bitmap::SMILE,
+                    'B' => bitmap::SAD,
+                    'C' => ARROW_LEFT,
+                    'D' => ARROW_UP,
+                    'E' => ARROW_DOWN,
+                    'F' => ARROW_RIGHT,
+                    _ => bitmap::QUESTION_MARK,
+                }
+            }
         }
     }
 }
