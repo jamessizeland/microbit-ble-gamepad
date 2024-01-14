@@ -9,17 +9,14 @@ use embassy_executor::Spawner;
 use embassy_nrf::{config::Config, gpio::Pin, interrupt::Priority};
 use embassy_time::Duration;
 use microbit_bsp::{display::Brightness, Microbit};
-use static_cell::StaticCell;
 
 use defmt_rtt as _;
 use panic_probe as _;
 
 use crate::{
     ble::{
-        advertiser, enable_softdevice,
-        gatt::*,
+        gatt::{gatt_server_task, GamepadServer},
         hid::{buttons_task, GamepadInputs},
-        softdevice_task,
     },
     io::{
         audio::{AsyncAudio, Tune},
@@ -43,17 +40,10 @@ async fn main(spawner: Spawner) {
     let board = Microbit::new(config());
     // let mut saadc = init_adc(.degrade_saadc(), board.saadc);
 
+    // Spawn Async Embassy Tasks
     let display = AsyncDisplay::new(spawner, board.display);
     let speaker = AsyncAudio::new(spawner, board.pwm0, board.speaker);
-
-    // Spawn the underlying softdevice task
-    let sd = enable_softdevice(name);
-    // Create a BLE GATT server and make it static
-    static SERVER: StaticCell<GamepadServer> = StaticCell::new();
-    let server = SERVER.init(GamepadServer::new(sd).unwrap());
-    info!("Starting Gatt Server");
-    defmt::unwrap!(spawner.spawn(softdevice_task(sd)));
-    let advertiser = advertiser::AdvertiserBuilder::new(name).build();
+    let (server, advertiser) = GamepadServer::start_gatt(name, spawner);
 
     let mut gamepad_buttons = GamepadInputs::new(
         &server.hid,
@@ -71,13 +61,15 @@ async fn main(spawner: Spawner) {
     // Main loop
     loop {
         display.display(QuestionMark, Duration::from_secs(2)).await;
-        let conn = defmt::unwrap!(advertiser.advertise(sd).await); // advertise for connections
+        let conn = advertiser.advertise().await; // advertise for connections
         display.display(Heart, Duration::from_secs(2)).await;
         speaker.play_tune(Tune::Connect).await;
+
         let gatt = gatt_server_task(server, &conn);
         let buttons = buttons_task(&mut gamepad_buttons, &conn);
         futures::pin_mut!(gatt, buttons);
         embassy_futures::select::select(gatt, buttons).await;
+
         speaker.play_tune(Tune::Disconnect).await;
     }
 }

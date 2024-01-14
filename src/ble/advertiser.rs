@@ -2,28 +2,30 @@ use defmt::info;
 use heapless::Vec;
 use nrf_softdevice::{
     ble::{
-        peripheral::{self, AdvertiseError},
+        peripheral::{self},
         Connection,
     },
     raw, Softdevice,
 };
 
 /// BLE advertiser
-pub struct AdvertiserBuilder<'a> {
+pub struct AdvertiserBuilder {
     /// Name of the device
-    name: &'a str,
+    name: &'static str,
+    sd: &'static Softdevice,
 }
 
 pub struct Advertiser {
     advertiser_data: Vec<u8, 31>,
     scan_data: [u8; 4],
+    sd: &'static Softdevice,
 }
 
 /// A BLE advertiser
-impl<'a> AdvertiserBuilder<'a> {
+impl AdvertiserBuilder {
     /// Create a new advertiser builder
-    pub fn new(name: &'a str) -> Self {
-        Self { name }
+    pub fn new(name: &'static str, sd: &'static Softdevice) -> Self {
+        Self { name, sd }
     }
     /// Build the advertiser
     pub fn build(self) -> Advertiser {
@@ -52,21 +54,22 @@ impl<'a> AdvertiserBuilder<'a> {
         Advertiser {
             advertiser_data,
             scan_data,
+            sd: self.sd,
         }
     }
 }
 
 impl Advertiser {
     /// Advertise and connect to a device with the given name
-    pub async fn advertise(&self, sd: &Softdevice) -> Result<Connection, AdvertiseError> {
+    pub async fn advertise(&self) -> Connection {
         let config = peripheral::Config::default();
         let adv = peripheral::ConnectableAdvertisement::ScannableUndirected {
             adv_data: &self.advertiser_data[..],
             scan_data: &self.scan_data[..],
         };
         info!("advertising");
-        let conn = peripheral::advertise_connectable(sd, adv, &config).await;
+        let conn = peripheral::advertise_connectable(self.sd, adv, &config).await;
         info!("connection established");
-        conn
+        defmt::unwrap!(conn)
     }
 }
