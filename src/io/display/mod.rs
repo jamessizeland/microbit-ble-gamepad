@@ -1,4 +1,5 @@
 use defmt::info;
+use embassy_executor::Spawner;
 use embassy_sync::{
     blocking_mutex::raw::ThreadModeRawMutex,
     channel::{Channel, Sender},
@@ -19,7 +20,9 @@ pub struct AsyncDisplay {
 }
 
 impl AsyncDisplay {
-    pub fn new() -> Self {
+    pub fn new(spawner: Spawner, display: LedMatrix) -> Self {
+        // Spawn the display driver task
+        defmt::unwrap!(spawner.spawn(display_driver_task(display)));
         Self {
             sender: DISPLAY_CHANNEL.sender(),
         }
@@ -91,7 +94,7 @@ pub enum DisplayAction {
 
 /// A task to update the display asynchronously, will wait for new inputs to be sent to it from a queue.
 #[embassy_executor::task]
-pub async fn display_driver_task(mut display: LedMatrix) {
+async fn display_driver_task(mut display: LedMatrix) {
     info!("Display driver task started");
     loop {
         match DISPLAY_CHANNEL.receive().await {

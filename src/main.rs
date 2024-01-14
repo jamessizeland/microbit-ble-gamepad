@@ -6,7 +6,7 @@ mod io;
 
 use defmt::info;
 use embassy_executor::Spawner;
-use embassy_nrf::{config::Config, gpio::Pin, interrupt::Priority, pwm::SimplePwm};
+use embassy_nrf::{config::Config, gpio::Pin, interrupt::Priority};
 use embassy_time::Duration;
 use futures::pin_mut;
 use microbit_bsp::{
@@ -27,7 +27,8 @@ use crate::{
         softdevice_task,
     },
     io::{
-        display::{display_driver_task, AsyncDisplay, DisplayFrame},
+        audio::AsyncAudio,
+        display::{AsyncDisplay, DisplayFrame},
         to_button,
     },
 };
@@ -47,9 +48,8 @@ async fn main(spawner: Spawner) {
     let board = Microbit::new(config());
     // let mut saadc = init_adc(.degrade_saadc(), board.saadc);
 
-    // Spawn the display driver task
-    defmt::unwrap!(spawner.spawn(display_driver_task(board.display)));
-    let display = AsyncDisplay::new();
+    let display = AsyncDisplay::new(spawner, board.display);
+    let speaker = AsyncAudio::new(spawner, board.pwm0, board.speaker);
 
     // Spawn the underlying softdevice task
     let sd = enable_softdevice(name);
@@ -71,9 +71,6 @@ async fn main(spawner: Spawner) {
         to_button(board.p15.degrade()),
     );
 
-    let pwm = SimplePwm::new_1ch(board.pwm0, board.speaker);
-    let mut speaker = speaker::PwmSpeaker::new(pwm);
-
     display.set_brightness(Brightness::MAX).await;
     display.scroll("BLE!").await;
 
@@ -86,14 +83,14 @@ async fn main(spawner: Spawner) {
         display
             .display(DisplayFrame::Heart, Duration::from_secs(2))
             .await;
-        speaker.play(&Note(Pitch::C, 200)).await;
-        speaker.play(&Note(Pitch::G, 200)).await;
+        speaker.play_note(Note(Pitch::C, 200)).await;
+        speaker.play_note(Note(Pitch::G, 200)).await;
         let gatt = gatt_server_task(server, &conn);
         let buttons = buttons_task(&mut gamepad_buttons, &conn);
         // let bas = notify_battery_level(server, &conn, &mut saadc);
         pin_mut!(gatt, buttons);
         embassy_futures::select::select(gatt, buttons).await;
-        speaker.play(&Note(Pitch::G, 200)).await;
-        speaker.play(&Note(Pitch::C, 200)).await;
+        speaker.play_note(Note(Pitch::G, 200)).await;
+        speaker.play_note(Note(Pitch::C, 200)).await;
     }
 }
