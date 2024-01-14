@@ -81,15 +81,18 @@ pub async fn analog_stick_task(
         if let Some(y) = y_axis.changed(buf[1]) {
             server.stick.y_notify(connection, &y).ok();
         }
-        display
-            .display(
-                DisplayFrame::Coord {
-                    x: x_axis.old,
-                    y: y_axis.old,
-                },
-                Duration::from_millis(5),
-            )
-            .await;
+        if !(x_axis.old == 0 && y_axis.old == 0) {
+            // only display if the stick is not centered
+            display
+                .display(
+                    DisplayFrame::Coord {
+                        x: x_axis.old,
+                        y: y_axis.old,
+                    },
+                    Duration::from_millis(20),
+                )
+                .await;
+        }
         Timer::after(debounce).await;
     }
 }
