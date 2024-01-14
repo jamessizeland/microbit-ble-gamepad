@@ -13,7 +13,7 @@ pub fn input_pin(pin: AnyPin) -> Input<'static, AnyPin> {
     Input::new(pin, Pull::Up)
 }
 
-bind_interrupts!(struct Irqs {
+bind_interrupts!(pub struct Irqs {
     SAADC => saadc::InterruptHandler;
 });
 

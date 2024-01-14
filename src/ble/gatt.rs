@@ -1,8 +1,9 @@
 use crate::ble::{advertiser, enable_softdevice, softdevice_task};
 
 use super::advertiser::Advertiser;
-use super::battery::*;
+// use super::battery::*;
 use super::hid::*;
+use super::stick::*;
 use defmt::info;
 use embassy_executor::Spawner;
 use nrf_softdevice::ble::{gatt_server, Connection};
@@ -12,13 +13,14 @@ use static_cell::StaticCell;
 pub struct GamepadServer {
     // pub bas: BatteryService,
     pub hid: ButtonService,
+    pub stick: StickService,
 }
 
 impl GamepadServer {
     pub fn start_gatt(
         name: &'static str,
         spawner: Spawner,
-    ) -> (&'static mut GamepadServer, Advertiser) {
+    ) -> (&'static GamepadServer, Advertiser) {
         // Spawn the underlying softdevice task
         let sd = enable_softdevice(name);
         // Create a BLE GATT server and make it static
@@ -47,6 +49,12 @@ pub async fn gatt_server_task(server: &GamepadServer, conn: &Connection) {
             | ButtonServiceEvent::ButtonECccdWrite { notifications }
             | ButtonServiceEvent::ButtonFCccdWrite { notifications } => {
                 info!("button: {}", notifications)
+            }
+        },
+        GamepadServerEvent::Stick(e) => match e {
+            StickServiceEvent::XCccdWrite { notifications }
+            | StickServiceEvent::YCccdWrite { notifications } => {
+                info!("stick: {}", notifications);
             }
         },
     })

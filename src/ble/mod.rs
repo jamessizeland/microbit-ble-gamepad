@@ -2,6 +2,7 @@ pub mod advertiser;
 pub mod battery;
 pub mod gatt;
 pub mod hid;
+pub mod stick;
 
 use defmt::info;
 use nrf_softdevice::{raw, Softdevice};

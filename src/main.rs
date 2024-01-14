@@ -17,6 +17,7 @@ use crate::{
     ble::{
         gatt::{gatt_server_task, GamepadServer},
         hid::{buttons_task, GamepadInputs},
+        stick::{analog_stick_task, init_analog_adc},
     },
     io::{
         audio::{AsyncAudio, Tune},
@@ -55,6 +56,8 @@ async fn main(spawner: Spawner) {
         to_button(board.p15.degrade()),
     );
 
+    let mut analog_stick = init_analog_adc(board.p1, board.p2, board.saadc);
+
     display.set_brightness(Brightness::MAX).await;
     display.scroll("BLE!").await;
 
@@ -67,8 +70,9 @@ async fn main(spawner: Spawner) {
 
         let gatt = gatt_server_task(server, &conn);
         let buttons = buttons_task(&mut gamepad_buttons, &conn);
-        futures::pin_mut!(gatt, buttons);
-        embassy_futures::select::select(gatt, buttons).await;
+        let analog = analog_stick_task(server, &conn, &mut analog_stick);
+        futures::pin_mut!(gatt, buttons, analog);
+        embassy_futures::select::select3(gatt, buttons, analog).await;
 
         speaker.play_tune(Tune::Disconnect).await;
     }

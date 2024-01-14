@@ -35,17 +35,11 @@ pub async fn notify_button_state(button: &mut GamepadButton, connection: &Connec
     loop {
         button.input.wait_for_low().await;
         info!("button {} pressed", button.name);
-        match notify_value(connection, button.ble_handle, &[0x01]) {
-            Ok(_) => info!("button {} notified", button.name),
-            Err(_) => info!("button {} failed to notify", button.name),
-        };
+        notify_value(connection, button.ble_handle, &[0x01]).ok();
         Timer::after(debounce).await;
         button.input.wait_for_high().await;
         info!("button {} released", button.name);
-        match notify_value(connection, button.ble_handle, &[0x00]) {
-            Ok(_) => info!("button {} notified", button.name),
-            Err(_) => info!("button {} failed to notify", button.name),
-        };
+        notify_value(connection, button.ble_handle, &[0x00]).ok();
         Timer::after(debounce).await;
     }
 }
