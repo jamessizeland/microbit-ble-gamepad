@@ -8,13 +8,18 @@ use embassy_sync::{
     blocking_mutex::raw::ThreadModeRawMutex,
     channel::{Channel, Sender},
 };
-use microbit_bsp::speaker::{self, Note};
+use microbit_bsp::speaker::{self, Note, Pitch};
 
 pub static AUDIO_CHANNEL: Channel<ThreadModeRawMutex, AudioAction, 64> = Channel::new();
 
 pub enum AudioAction {
     PlayNote(Note),
-    PlayTune,
+    PlayTune(Tune),
+}
+
+pub enum Tune {
+    Connect,
+    Disconnect,
 }
 
 pub struct AsyncAudio {
@@ -34,6 +39,10 @@ impl AsyncAudio {
     pub async fn play_note(&self, note: Note) {
         self.sender.send(AudioAction::PlayNote(note)).await;
     }
+    /// Play a sequence of notes on the speaker
+    pub async fn play_tune(&self, tune: Tune) {
+        self.sender.send(AudioAction::PlayTune(tune)).await;
+    }
 }
 
 /// The audio driver task
@@ -47,7 +56,16 @@ async fn audio_driver_task(pwm0: PWM0, speaker: P0_00) {
             AudioAction::PlayNote(note) => {
                 speaker.play(&note).await;
             }
-            AudioAction::PlayTune => unimplemented!("play tune"),
+            AudioAction::PlayTune(tune) => match tune {
+                Tune::Connect => {
+                    speaker.play(&Note(Pitch::C, 200)).await;
+                    speaker.play(&Note(Pitch::G, 200)).await;
+                }
+                Tune::Disconnect => {
+                    speaker.play(&Note(Pitch::G, 200)).await;
+                    speaker.play(&Note(Pitch::C, 200)).await;
+                }
+            },
         }
     }
 }
