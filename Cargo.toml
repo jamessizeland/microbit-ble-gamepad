@@ -29,26 +29,20 @@ embassy-nrf = { version = "0.1.0", features = [
     "time-driver-rtc1",
     "defmt",
 ] }
-embassy-sync = { version = "0.5.0", default-features = false }
-embassy-futures = { version = "0.1.0", default-features = false }
-embassy-executor = { version = "0.4.0", default-features = false, features = [
+embassy-sync = { version = "^0.5.0", default-features = false }
+embassy-futures = { version = "^0.1.0", default-features = false }
+embassy-executor = { version = "^0.5.0", default-features = false, features = [
     "integrated-timers",
     "defmt",
     "arch-cortex-m",
     "executor-interrupt",
     "executor-thread",
 ] }
-embassy-time = { version = "0.2.0", default-features = false, features = [
+embassy-time = { version = "^0.3.0", default-features = false, features = [
     "defmt",
     "defmt-timestamp-uptime",
 ] }
-
-[patch.crates-io]
-embassy-nrf = { git = "https://github.com/embassy-rs/embassy.git", rev = "ae84f2a157cf34c5bbc88ec4637f084f1ab924ea" }
-embassy-executor = { git = "https://github.com/embassy-rs/embassy.git", rev = "ae84f2a157cf34c5bbc88ec4637f084f1ab924ea" }
-embassy-time = { git = "https://github.com/embassy-rs/embassy.git", rev = "ae84f2a157cf34c5bbc88ec4637f084f1ab924ea" }
-embassy-futures = { git = "https://github.com/embassy-rs/embassy.git", rev = "ae84f2a157cf34c5bbc88ec4637f084f1ab924ea" }
-embassy-sync = { git = "https://github.com/embassy-rs/embassy.git", rev = "ae84f2a157cf34c5bbc88ec4637f084f1ab924ea" }
+microbit-bsp = "0.1.0"
 
 [profile.release]
 codegen-units = 1
