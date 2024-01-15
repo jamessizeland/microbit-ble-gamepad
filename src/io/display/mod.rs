@@ -4,7 +4,7 @@ use embassy_sync::{
     blocking_mutex::raw::ThreadModeRawMutex,
     channel::{Channel, Sender},
 };
-use embassy_time::Duration;
+use embassy_time::{Duration, Timer};
 use microbit_bsp::{
     display::{fonts::*, Brightness, Frame},
     LedMatrix,
@@ -45,6 +45,7 @@ impl AsyncDisplay {
         self.sender.send(DisplayAction::Scroll(text)).await;
     }
 
+    /// Non-blocking display
     pub async fn display(&self, frame: DisplayFrame, duration: Duration) {
         self.sender
             .send(DisplayAction::SetFrame {
@@ -52,6 +53,16 @@ impl AsyncDisplay {
                 duration: Some(duration),
             })
             .await;
+    }
+    /// Blocking display
+    pub async fn display_blocking(&self, frame: DisplayFrame, duration: Duration) {
+        self.sender
+            .send(DisplayAction::SetFrame {
+                frame,
+                duration: Some(duration),
+            })
+            .await;
+        Timer::after(duration).await;
     }
 }
 
@@ -88,8 +99,8 @@ impl DisplayFrame {
             DisplayFrame::Coord { x, y } => {
                 let mut frame = Frame::empty();
                 // convert from cartesian coordinates to display coordinates
-                let x = (x + 2).clamp(0, 5);
-                let y = (y + 2).clamp(0, 5);
+                let x = (x + 2).clamp(0, 4);
+                let y = (y + 2).clamp(0, 4);
                 frame.set(x as usize, y as usize);
                 frame
             }

@@ -7,7 +7,7 @@ mod io;
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_nrf::{config::Config, gpio::Pin, interrupt::Priority};
-use embassy_time::Duration;
+use embassy_time::{Duration, Timer};
 use microbit_bsp::{display::Brightness, Microbit};
 
 use defmt_rtt as _;
@@ -65,8 +65,9 @@ async fn main(spawner: Spawner) {
     loop {
         display.display(QuestionMark, Duration::from_secs(2)).await;
         let conn = advertiser.advertise().await; // advertise for connections
-        display.display(Heart, Duration::from_secs(2)).await;
+        let pause = Duration::from_secs(1);
         speaker.play_tune(Tune::Connect).await;
+        display.display_blocking(Heart, pause).await;
 
         let gatt = gatt_server_task(server, &conn);
         let buttons = buttons_task(&mut gamepad_buttons, &conn, &display);
