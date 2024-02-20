@@ -14,11 +14,11 @@ use crate::io::{
 
 use super::gatt::GamepadServer;
 
-#[nrf_softdevice::gatt_service(uuid = "1812")]
+#[nrf_softdevice::gatt_service(uuid = "7e701cf1-b1df-42a1-bb5f-6a1028c793b0")]
 pub struct StickService {
-    #[characteristic(uuid = "2ae2", read, notify)]
+    #[characteristic(uuid = "e3d1afe4-b414-44e3-be54-0ea26c394eba", read, notify)]
     x: i8,
-    #[characteristic(uuid = "2ae2", read, notify)]
+    #[characteristic(uuid = "65133212-952b-4000-a735-ea558db3ca7b", read, notify)]
     y: i8,
 }
 
@@ -65,14 +65,14 @@ pub async fn analog_stick_task(
     info!("analog stick service online");
     let mut buf = [0i16; 2];
     saadc.calibrate().await;
-    saadc.sample(&mut buf).await;
-    // full range around 1870, so divide by 640 to get a range of -3 to 3
-    let divider = 640;
-    let mut x_axis = Axis::new(buf[0], divider);
-    let mut y_axis = Axis::new(buf[1], divider);
+    // full range around 3740, so divide by 935 to get a range of -3, -2, -1, 0, 1, 2, 3
+    let offset = 3740 / 2;
+    let divider = 623;
+    let mut x_axis = Axis::new(offset, divider);
+    let mut y_axis = Axis::new(offset, divider);
     loop {
         // read adc values for x and y, and if they have changed by a certain amount, notify
-        // we are reducing the number of analogue stick levels to a range of -3 to 3
+        // we are reducing the number of analogue stick levels to a range of -2 to 2
         saadc.sample(&mut buf).await;
         // display the x and y values on the led matrix
         if let Some(x) = x_axis.changed(buf[0]) {

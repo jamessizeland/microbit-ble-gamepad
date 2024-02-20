@@ -7,7 +7,7 @@ mod io;
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_nrf::{config::Config, gpio::Pin, interrupt::Priority};
-use embassy_time::{Duration, Timer};
+use embassy_time::Duration;
 use microbit_bsp::{display::Brightness, Microbit};
 
 use defmt_rtt as _;
@@ -37,7 +37,7 @@ fn config() -> Config {
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     info!("Hello World!");
-    let name = "Microbit Gamepad";
+    let name = "Rust Gamepad";
     let board = Microbit::new(config());
     // let mut saadc = init_adc(.degrade_saadc(), board.saadc);
 

@@ -5,19 +5,19 @@ use nrf_softdevice::ble::{gatt_server::notify_value, Connection};
 
 use crate::io::display::{self, DisplayFrame};
 
-#[nrf_softdevice::gatt_service(uuid = "1812")]
+#[nrf_softdevice::gatt_service(uuid = "260279e7-a5dd-447b-9bd8-e624ef464d6e")]
 pub struct ButtonService {
-    #[characteristic(uuid = "2ae2", read, notify)]
+    #[characteristic(uuid = "c665eb11-eee4-452b-9047-a98a3916bd80", read, notify)]
     button_a: bool,
-    #[characteristic(uuid = "2ae2", read, notify)]
+    #[characteristic(uuid = "7c9a1a08-ecf2-4f7d-a24b-0ab01615cc77", read, notify)]
     button_b: bool,
-    #[characteristic(uuid = "2ae2", read, notify)]
+    #[characteristic(uuid = "163a7681-4b8b-4249-899d-ae1a634ce692", read, notify)]
     button_c: bool,
-    #[characteristic(uuid = "2ae2", read, notify)]
+    #[characteristic(uuid = "c8ede9b0-4eeb-4f31-b8d4-f920881961fa", read, notify)]
     button_d: bool,
-    #[characteristic(uuid = "2ae2", read, notify)]
+    #[characteristic(uuid = "7729d82d-a8b9-4c3e-95bf-3794b70aba56", read, notify)]
     button_e: bool,
-    #[characteristic(uuid = "2ae2", read, notify)]
+    #[characteristic(uuid = "f8f17954-f235-4d71-8ece-1522ec067c55", read, notify)]
     button_f: bool,
 }
 
@@ -92,7 +92,6 @@ pub struct GamepadInputs {
     pub d: GamepadButton,
     pub e: GamepadButton,
     pub f: GamepadButton,
-    // analog
 }
 
 impl GamepadInputs {
