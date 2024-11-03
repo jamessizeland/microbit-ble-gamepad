@@ -1,12 +1,6 @@
 use defmt::info;
 use heapless::Vec;
-use nrf_softdevice::{
-    ble::{
-        peripheral::{self},
-        Connection,
-    },
-    raw, Softdevice,
-};
+use trouble_host::prelude::*;
 
 /// BLE advertiser
 pub struct AdvertiserBuilder {

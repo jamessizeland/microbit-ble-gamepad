@@ -6,5 +6,6 @@ rustflags = ["-C", "linker=flip-link"]
 [build]
 target = "thumbv7em-none-eabihf"
 
+# Enable printing of defmt debug, info and warning messages by default
 [env]
 DEFMT_LOG = "debug"

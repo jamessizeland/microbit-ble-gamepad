@@ -1,11 +1,11 @@
 use defmt::info;
-use embassy_nrf::{
+use embassy_time::{Duration, Timer};
+use microbit_bsp::embassy_nrf::{
     interrupt::{self, InterruptExt as _},
     peripherals::{P0_03, P0_04, SAADC},
     saadc::{self, Input as _, Saadc},
 };
-use embassy_time::{Duration, Timer};
-use nrf_softdevice::ble::Connection;
+use trouble_host::prelude::*;
 
 use crate::io::{
     display::{AsyncDisplay, DisplayFrame},
@@ -14,7 +14,7 @@ use crate::io::{
 
 use super::gatt::GamepadServer;
 
-#[nrf_softdevice::gatt_service(uuid = "7e701cf1-b1df-42a1-bb5f-6a1028c793b0")]
+#[gatt_service(uuid = "7e701cf1-b1df-42a1-bb5f-6a1028c793b0")]
 pub struct StickService {
     #[characteristic(uuid = "e3d1afe4-b414-44e3-be54-0ea26c394eba", read, notify)]
     x: i8,
@@ -23,7 +23,7 @@ pub struct StickService {
 }
 
 pub fn init_analog_adc(x_pin: P0_03, y_pin: P0_04, adc: SAADC) -> Saadc<'static, 2> {
-    let config = embassy_nrf::saadc::Config::default();
+    let config = saadc::Config::default();
     interrupt::SAADC.set_priority(interrupt::Priority::P3);
     let channel_cfg = saadc::ChannelConfig::single_ended(x_pin.degrade_saadc());
     let channel_cfg2 = saadc::ChannelConfig::single_ended(y_pin.degrade_saadc());
@@ -55,9 +55,9 @@ impl Axis {
     }
 }
 
-pub async fn analog_stick_task(
-    server: &GamepadServer,
-    connection: &Connection,
+pub async fn analog_stick_task<C: Controller>(
+    server: &GamepadServer<'_, '_, C>,
+    connection: &Connection<'_>,
     saadc: &mut Saadc<'_, 2>,
     display: &AsyncDisplay,
 ) {

@@ -1,11 +1,11 @@
 use defmt::info;
 use embassy_time::{Duration, Timer};
 use microbit_bsp::Button;
-use nrf_softdevice::ble::{gatt_server::notify_value, Connection};
+use trouble_host::prelude::*;
 
 use crate::io::display::{self, DisplayFrame};
 
-#[nrf_softdevice::gatt_service(uuid = "260279e7-a5dd-447b-9bd8-e624ef464d6e")]
+#[gatt_service(uuid = "260279e7-a5dd-447b-9bd8-e624ef464d6e")]
 pub struct ButtonService {
     #[characteristic(uuid = "c665eb11-eee4-452b-9047-a98a3916bd80", read, notify)]
     button_a: bool,
@@ -33,7 +33,7 @@ pub struct GamepadButton {
 /// Notify when this button is pressed or released
 pub async fn notify_button_state(
     button: &mut GamepadButton,
-    connection: &Connection,
+    connection: &Connection<'_>,
     display: &display::AsyncDisplay,
 ) {
     let debounce = Duration::from_millis(50);
@@ -58,7 +58,7 @@ pub async fn notify_button_state(
 
 pub async fn buttons_task(
     buttons: &mut GamepadInputs,
-    conn: &Connection,
+    conn: &Connection<'_>,
     display: &display::AsyncDisplay,
 ) {
     let futures = [
