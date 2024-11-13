@@ -10,11 +10,12 @@ use microbit_bsp::{
         peripherals::{P0_00, PWM0},
         pwm::SimplePwm,
     },
-    speaker::NamedPitch,
+    speaker::NamedPitch::*,
 };
 
 pub static AUDIO_CHANNEL: Channel<ThreadModeRawMutex, AudioAction, 64> = Channel::new();
 
+#[allow(unused)]
 pub enum AudioAction {
     PlayNote(Note),
     PlayTune(Tune),
@@ -39,6 +40,7 @@ impl AsyncAudio {
         }
     }
     /// Play a note on the speaker
+    #[allow(unused)]
     pub async fn play_note(&self, note: Note) {
         self.sender.send(AudioAction::PlayNote(note)).await;
     }
@@ -61,12 +63,12 @@ async fn audio_driver_task(pwm0: PWM0, speaker: P0_00) {
             }
             AudioAction::PlayTune(tune) => match tune {
                 Tune::Connect => {
-                    speaker.play(&Note(Pitch::Named(NamedPitch::C0), 200)).await;
-                    speaker.play(&Note(Pitch::Named(NamedPitch::G0), 200)).await;
+                    speaker.play(&Note(Pitch::Named(C4), 200)).await;
+                    speaker.play(&Note(Pitch::Named(G4), 200)).await;
                 }
                 Tune::Disconnect => {
-                    speaker.play(&Note(Pitch::Named(NamedPitch::G0), 200)).await;
-                    speaker.play(&Note(Pitch::Named(NamedPitch::C0), 200)).await;
+                    speaker.play(&Note(Pitch::Named(G4), 200)).await;
+                    speaker.play(&Note(Pitch::Named(C4), 200)).await;
                 }
             },
         }

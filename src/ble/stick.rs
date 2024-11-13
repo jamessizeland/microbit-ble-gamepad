@@ -1,9 +1,12 @@
 use defmt::info;
 use embassy_time::{Duration, Timer};
-use microbit_bsp::embassy_nrf::{
-    interrupt::{self, InterruptExt as _},
-    peripherals::{P0_03, P0_04, SAADC},
-    saadc::{self, Input as _, Saadc},
+use microbit_bsp::{
+    ble::SoftdeviceError,
+    embassy_nrf::{
+        interrupt::{self, InterruptExt as _},
+        peripherals::{P0_03, P0_04, SAADC},
+        saadc::{self, Input as _, Saadc},
+    },
 };
 use trouble_host::prelude::*;
 
@@ -55,12 +58,12 @@ impl Axis {
     }
 }
 
-pub async fn analog_stick_task<C: Controller>(
-    server: &GamepadServer<'_, '_, C>,
-    connection: &Connection<'_>,
+pub async fn analog_stick_task(
+    server: &GamepadServer<'_>,
+    conn: &Connection<'_>,
     saadc: &mut Saadc<'_, 2>,
     display: &AsyncDisplay,
-) {
+) -> Result<(), BleHostError<SoftdeviceError>> {
     let debounce = Duration::from_millis(20);
     info!("analog stick service online");
     let mut buf = [0i16; 2];
@@ -76,10 +79,10 @@ pub async fn analog_stick_task<C: Controller>(
         saadc.sample(&mut buf).await;
         // display the x and y values on the led matrix
         if let Some(x) = x_axis.changed(buf[0]) {
-            server.stick.x_notify(connection, &x).ok();
+            server.notify(&server.stick.x, conn, &x).await?;
         }
         if let Some(y) = y_axis.changed(buf[1]) {
-            server.stick.y_notify(connection, &y).ok();
+            server.notify(&server.stick.y, conn, &y).await?;
         }
         if !(x_axis.old == 0 && y_axis.old == 0) {
             // only display if the stick is not centered
