@@ -37,6 +37,7 @@ impl AsyncDisplay {
             .await;
     }
 
+    #[allow(unused)]
     pub async fn clear(&self) {
         self.sender.send(DisplayAction::Clear).await;
     }
@@ -66,6 +67,7 @@ impl AsyncDisplay {
     }
 }
 
+#[allow(unused)]
 pub enum DisplayFrame {
     DisplayFrame(Frame<5, 5>),
     /// Display a single pixel at the given coordinates, where (0,0) is the center of the display.
@@ -120,6 +122,7 @@ impl DisplayFrame {
     }
 }
 
+#[allow(unused)]
 pub enum DisplayAction {
     /// Set the brightness of the display.
     SetBrightness(Brightness),

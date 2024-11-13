@@ -1,17 +1,21 @@
 use defmt::info;
 use embassy_executor::Spawner;
-use embassy_nrf::{
-    peripherals::{P0_00, PWM0},
-    pwm::SimplePwm,
-};
 use embassy_sync::{
     blocking_mutex::raw::ThreadModeRawMutex,
     channel::{Channel, Sender},
 };
 use microbit_bsp::speaker::{self, Note, Pitch};
+use microbit_bsp::{
+    embassy_nrf::{
+        peripherals::{P0_00, PWM0},
+        pwm::SimplePwm,
+    },
+    speaker::NamedPitch::*,
+};
 
 pub static AUDIO_CHANNEL: Channel<ThreadModeRawMutex, AudioAction, 64> = Channel::new();
 
+#[allow(unused)]
 pub enum AudioAction {
     PlayNote(Note),
     PlayTune(Tune),
@@ -36,6 +40,7 @@ impl AsyncAudio {
         }
     }
     /// Play a note on the speaker
+    #[allow(unused)]
     pub async fn play_note(&self, note: Note) {
         self.sender.send(AudioAction::PlayNote(note)).await;
     }
@@ -58,12 +63,12 @@ async fn audio_driver_task(pwm0: PWM0, speaker: P0_00) {
             }
             AudioAction::PlayTune(tune) => match tune {
                 Tune::Connect => {
-                    speaker.play(&Note(Pitch::C, 200)).await;
-                    speaker.play(&Note(Pitch::G, 200)).await;
+                    speaker.play(&Note(Pitch::Named(C4), 200)).await;
+                    speaker.play(&Note(Pitch::Named(G4), 200)).await;
                 }
                 Tune::Disconnect => {
-                    speaker.play(&Note(Pitch::G, 200)).await;
-                    speaker.play(&Note(Pitch::C, 200)).await;
+                    speaker.play(&Note(Pitch::Named(G4), 200)).await;
+                    speaker.play(&Note(Pitch::Named(C4), 200)).await;
                 }
             },
         }

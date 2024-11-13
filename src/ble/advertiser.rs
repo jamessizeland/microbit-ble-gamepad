@@ -1,34 +1,30 @@
 use defmt::info;
-use heapless::Vec;
-use nrf_softdevice::{
-    ble::{
-        peripheral::{self},
-        Connection,
-    },
-    raw, Softdevice,
-};
+use microbit_bsp::ble::SoftdeviceError;
+use trouble_host::prelude::*;
+
+use super::SdcPeripheral;
 
 /// BLE advertiser
-pub struct AdvertiserBuilder {
+pub struct AdvertiserBuilder<'d> {
     /// Name of the device
-    name: &'static str,
-    sd: &'static Softdevice,
+    name: &'d str,
+    peripheral: SdcPeripheral<'d>,
 }
 
-pub struct Advertiser {
-    advertiser_data: Vec<u8, 31>,
+pub struct Advertiser<'d> {
+    advertiser_data: [u8; 31],
     scan_data: [u8; 4],
-    sd: &'static Softdevice,
+    peripheral: SdcPeripheral<'d>,
 }
 
 /// A BLE advertiser
-impl AdvertiserBuilder {
+impl<'d> AdvertiserBuilder<'d> {
     /// Create a new advertiser builder
-    pub fn new(name: &'static str, sd: &'static Softdevice) -> Self {
-        Self { name, sd }
+    pub fn new(name: &'d str, peripheral: SdcPeripheral<'d>) -> Self {
+        Self { name, peripheral }
     }
     /// Build the advertiser
-    pub fn build(self) -> Advertiser {
+    pub fn build(self) -> Result<Advertiser<'d>, Error> {
         let name: &str;
         if self.name.len() > 22 {
             name = &self.name[..22];
@@ -36,40 +32,41 @@ impl AdvertiserBuilder {
         } else {
             name = self.name;
         }
-        let mut advertiser_data = Vec::new();
+        let mut advertiser_data = [0; 31];
+        AdStructure::encode_slice(
+            &[
+                AdStructure::Flags(LE_GENERAL_DISCOVERABLE | BR_EDR_NOT_SUPPORTED),
+                AdStructure::ServiceUuids16(&[Uuid::Uuid16([0x0f, 0x18])]),
+                AdStructure::CompleteLocalName(name.as_bytes()),
+            ],
+            &mut advertiser_data[..],
+        )?;
         #[rustfmt::skip]
-        advertiser_data.extend_from_slice(&[
-            0x02, raw::BLE_GAP_AD_TYPE_FLAGS as u8, raw::BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE as u8,
-            0x03, raw::BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE as u8, 0x09, 0x18,
-            (1 + name.len() as u8), raw::BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME as u8]).unwrap();
-
-        advertiser_data
-            .extend_from_slice(name.as_bytes())
-            .ok()
-            .unwrap();
-        #[rustfmt::skip]
-        let scan_data = [
-            0x03, raw::BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE as u8, 0x09, 0x18,
-        ];
-        Advertiser {
+        let scan_data: [u8;4] = [0; 4];
+        Ok(Advertiser {
             advertiser_data,
             scan_data,
-            sd: self.sd,
-        }
+            peripheral: self.peripheral,
+        })
     }
 }
 
-impl Advertiser {
+impl<'d> Advertiser<'d> {
     /// Advertise and connect to a device with the given name
-    pub async fn advertise(&self) -> Connection {
-        let config = peripheral::Config::default();
-        let adv = peripheral::ConnectableAdvertisement::ScannableUndirected {
-            adv_data: &self.advertiser_data[..],
-            scan_data: &self.scan_data[..],
-        };
+    pub async fn advertise(&mut self) -> Result<Connection, BleHostError<SoftdeviceError>> {
+        let mut advertiser = self
+            .peripheral
+            .advertise(
+                &Default::default(),
+                Advertisement::ConnectableScannableUndirected {
+                    adv_data: &self.advertiser_data[..],
+                    scan_data: &self.scan_data[..],
+                },
+            )
+            .await?;
         info!("advertising");
-        let conn = peripheral::advertise_connectable(self.sd, adv, &config).await;
+        let conn = advertiser.accept().await?;
         info!("connection established");
-        defmt::unwrap!(conn)
+        Ok(conn)
     }
 }

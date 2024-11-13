@@ -4,45 +4,45 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cortex-m = { version = "0.7.6", features = ["critical-section-single-core"] }
+cortex-m = { version = "0.7.6" }
 cortex-m-rt = "0.7"
-embedded-hal = "1.0.0"
-lsm303agr = "1.0.0"
-futures = { version = "0.3.29", default-features = false }
+lsm303agr = "1.1.0"
 heapless = "0.8.0"
-static_cell = "2.0.0"
 
 defmt-rtt = "0.4"
 defmt = "0.3"
 panic-probe = { version = "0.3", features = ["print-defmt"] }
 
-nrf-softdevice = { git = "https://github.com/embassy-rs/nrf-softdevice.git", features = [
-    "ble-peripheral",
-    "ble-gatt-server",
-    "s140",
-    "nrf52833",
+# embassy dependencies
+embassy-sync = { version = "^0.6.0", default-features = false, features = [
     "defmt",
 ] }
-embassy-nrf = { version = "0.1.0", features = [
-    "nrf52833",
-    "gpiote",
-    "time-driver-rtc1",
-    "defmt",
-] }
-embassy-sync = { version = "^0.5.0", default-features = false }
 embassy-futures = { version = "^0.1.0", default-features = false }
-embassy-executor = { version = "^0.5.0", default-features = false, features = [
+embassy-executor = { version = "^0.6.1", default-features = false, features = [
     "integrated-timers",
     "defmt",
     "arch-cortex-m",
     "executor-interrupt",
     "executor-thread",
+    "task-arena-size-32768",
 ] }
 embassy-time = { version = "^0.3.0", default-features = false, features = [
     "defmt",
     "defmt-timestamp-uptime",
 ] }
-microbit-bsp = "0.2.0"
+
+# nrf52833 dependencies
+microbit-bsp = { git = "https://github.com/jamessizeland/microbit-bsp.git", branch = "trouble", features = [
+    "trouble",
+] }
+# microbit-bsp = { path = "../microbit-bsp", features = ["trouble"] }
+
+# BLE dependencies
+bt-hci = { version = "0.1.1", default-features = false, features = ["defmt"] }
+trouble-host = { git = "https://github.com/embassy-rs/trouble.git", features = [
+    "defmt",
+] }
+static_cell = "2.1.0"
 
 [profile.release]
 codegen-units = 1
