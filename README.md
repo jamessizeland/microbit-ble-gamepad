@@ -16,7 +16,6 @@ Demo of bringing up Bluetooth Low Energy (BLE) using Embedded Rust, by turning a
 ```bash
 cargo install cargo-binstall # binary installer tool
 cargo binstall probe-rs-tools
-cargo binstall flip-link
 ```
 
 ```bash
@@ -25,7 +24,20 @@ cargo run --release
 
 ## Troubleshooting
 
-`nrf-sdc` requires clang. On Windows I install this with `choco install llvm`. Once installed, you need to set the LIBCLANG_PATH environment variable to the directory containing libclang.dll.
+`nrf-sdc` requires clang.
+
+```bash
+# Linux
+sudo apt install llvm
+# Windows.
+choco install llvm 
+# Mac
+brew install llvm
+```
+
+## Windows
+
+Once installed, you may need to set the LIBCLANG_PATH environment variable to the directory containing libclang.dll.
 
 - Open the Start Menu, search for "Environment Variables," and select "Edit the system environment variables."
 - Click on "Environment Variables."
