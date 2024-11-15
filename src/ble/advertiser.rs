@@ -53,7 +53,7 @@ impl<'d> AdvertiserBuilder<'d> {
 
 impl<'d> Advertiser<'d> {
     /// Advertise and connect to a device with the given name
-    pub async fn advertise(&mut self) -> Result<Connection, BleHostError<SoftdeviceError>> {
+    pub async fn advertise(&mut self) -> Result<Connection<'d>, BleHostError<SoftdeviceError>> {
         let mut advertiser = self
             .peripheral
             .advertise(

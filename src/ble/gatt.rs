@@ -1,26 +1,32 @@
-use super::advertiser::Advertiser;
-use super::hid::*;
-use super::stick::*;
-use crate::ble::advertiser::AdvertiserBuilder;
-use crate::ble::ble_task;
-use crate::ble::{mpsl_task, SdcResources};
-use defmt::error;
-use defmt::info;
+use super::{
+    advertiser::{Advertiser, AdvertiserBuilder},
+    ble_task,
+    hid::*,
+    mpsl_task,
+    stick::*,
+    SdcResources,
+};
+use defmt::{error, info};
 use embassy_executor::Spawner;
-use embassy_futures::select::select;
-use embassy_futures::select::Either;
-use embassy_time::Timer;
+use embassy_futures::select::{select, Either};
 use microbit_bsp::ble::{MultiprotocolServiceLayer, SoftdeviceController};
 use static_cell::StaticCell;
 use trouble_host::prelude::*;
 
 pub type GamepadServer<'d> = Server<'d, 'd, SoftdeviceController<'d>>;
 
+#[gatt_service(uuid = "460279e7-a5dd-447b-9bd8-e624ef464d6e")]
+pub struct Mode {
+    #[characteristic(uuid = "f8f17959-f235-4d71-8ece-1522ec067c55", read, write)]
+    pub mode: u8,
+}
+
 #[gatt_server(attribute_data_size = 100)]
 pub struct Server {
     // pub bas: BatteryService,
     pub hid: ButtonService,
     pub stick: StickService,
+    pub mode: Mode,
 }
 
 impl Server<'static, 'static, SoftdeviceController<'static>> {
@@ -49,7 +55,7 @@ impl Server<'static, 'static, SoftdeviceController<'static>> {
                 stack,
                 GapConfig::Peripheral(PeripheralConfig {
                     name,
-                    appearance: &appearance::GENERIC_POWER,
+                    appearance: &appearance::GAMEPAD,
                 }),
             )?)
         };
@@ -64,9 +70,10 @@ impl Server<'static, 'static, SoftdeviceController<'static>> {
 pub async fn gatt_server_task(server: &GamepadServer<'_>, conn: &Connection<'_>) {
     // check if the connection is still active every second
     loop {
-        match select(Timer::after_secs(1), server.next()).await {
-            Either::First(_) => {
-                if !conn.is_connected() {
+        match select(conn.event(), server.next()).await {
+            Either::First(event) => {
+                if let ConnectionEvent::Disconnected { reason } = event {
+                    info!("[gatt] Disconnected: {:?}", reason);
                     break;
                 }
             }
@@ -75,7 +82,7 @@ pub async fn gatt_server_task(server: &GamepadServer<'_>, conn: &Connection<'_>)
                     value_handle,
                     connection: _,
                 }) => {
-                    info!("[gatt] Write event on {:?}", value_handle);
+                    info!("[gatt] Server Write event on {:?}", value_handle);
                 }
                 Ok(GattEvent::Read {
                     value_handle,
