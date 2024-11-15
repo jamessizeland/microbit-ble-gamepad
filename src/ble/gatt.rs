@@ -1,20 +1,23 @@
-use super::advertiser::Advertiser;
+use super::advertiser::{Advertiser, AdvertiserBuilder};
 use super::hid::*;
 use super::stick::*;
-use crate::ble::advertiser::AdvertiserBuilder;
-use crate::ble::ble_task;
-use crate::ble::{mpsl_task, SdcResources};
-use defmt::error;
-use defmt::info;
+use super::{ble_task, mpsl_task, SdcResources};
+use defmt::{error, info};
 use embassy_executor::Spawner;
 use embassy_futures::select::select;
 use embassy_futures::select::Either;
-use embassy_time::Timer;
 use microbit_bsp::ble::{MultiprotocolServiceLayer, SoftdeviceController};
 use static_cell::StaticCell;
 use trouble_host::prelude::*;
 
 pub type GamepadServer<'d> = Server<'d, 'd, SoftdeviceController<'d>>;
+
+/// Allow a central to decide which player this controller belongs to
+#[gatt_service(uuid = "8f701cf1-b1df-42a1-bb5f-6a1028c793b0")]
+pub struct Player {
+    #[characteristic(uuid = "e3d1afe4-b414-44e3-be54-0ea26c394eba", read, notify)]
+    index: u8,
+}
 
 #[gatt_server(attribute_data_size = 100)]
 pub struct Server {
@@ -64,9 +67,10 @@ impl Server<'static, 'static, SoftdeviceController<'static>> {
 pub async fn gatt_server_task(server: &GamepadServer<'_>, conn: &Connection<'_>) {
     // check if the connection is still active every second
     loop {
-        match select(Timer::after_secs(1), server.next()).await {
-            Either::First(_) => {
-                if !conn.is_connected() {
+        match select(conn.event(), server.next()).await {
+            Either::First(event) => {
+                if let ConnectionEvent::Disconnected { reason } = event {
+                    info!("[gatt] Disconnected: {:?}", reason);
                     break;
                 }
             }
@@ -75,7 +79,7 @@ pub async fn gatt_server_task(server: &GamepadServer<'_>, conn: &Connection<'_>)
                     value_handle,
                     connection: _,
                 }) => {
-                    info!("[gatt] Write event on {:?}", value_handle);
+                    info!("[gatt] Server Write event on {:?}", value_handle);
                 }
                 Ok(GattEvent::Read {
                     value_handle,
