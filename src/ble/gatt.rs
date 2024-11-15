@@ -75,16 +75,10 @@ pub async fn gatt_server_task(server: &GamepadServer<'_>, conn: &Connection<'_>)
                 }
             }
             Either::Second(event) => match event {
-                Ok(GattEvent::Write {
-                    value_handle,
-                    connection: _,
-                }) => {
+                Ok(GattEvent::Write { value_handle, .. }) => {
                     info!("[gatt] Server Write event on {:?}", value_handle);
                 }
-                Ok(GattEvent::Read {
-                    value_handle,
-                    connection: _,
-                }) => {
+                Ok(GattEvent::Read { value_handle, .. }) => {
                     info!("[gatt] Read event on {:?}", value_handle);
                 }
                 Err(e) => {
