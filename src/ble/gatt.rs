@@ -2,7 +2,7 @@ use super::advertiser::{Advertiser, AdvertiserBuilder};
 use super::hid::*;
 use super::stick::*;
 use super::{ble_task, mpsl_task, SdcResources};
-use defmt::{error, info};
+use defmt::info;
 use embassy_executor::Spawner;
 use embassy_futures::select::select;
 use embassy_futures::select::Either;
@@ -15,7 +15,7 @@ pub type GamepadServer<'d> = Server<'d, 'd, SoftdeviceController<'d>>;
 /// Allow a central to decide which player this controller belongs to
 #[gatt_service(uuid = "8f701cf1-b1df-42a1-bb5f-6a1028c793b0")]
 pub struct Player {
-    #[characteristic(uuid = "e3d1afe4-b414-44e3-be54-0ea26c394eba", read, notify)]
+    #[characteristic(uuid = "e3d1afe4-b414-44e3-be54-0ea26c394eba", read, write)]
     index: u8,
 }
 
@@ -24,6 +24,7 @@ pub struct Server {
     // pub bas: BatteryService,
     pub hid: ButtonService,
     pub stick: StickService,
+    pub player: Player,
 }
 
 impl Server<'static, 'static, SoftdeviceController<'static>> {
@@ -67,24 +68,24 @@ impl Server<'static, 'static, SoftdeviceController<'static>> {
 pub async fn gatt_server_task(server: &GamepadServer<'_>, conn: &Connection<'_>) {
     // check if the connection is still active every second
     loop {
-        match select(conn.event(), server.next()).await {
-            Either::First(event) => {
-                if let ConnectionEvent::Disconnected { reason } = event {
+        if let Either::First(event) = select(conn.next(), server.run()).await {
+            match event {
+                ConnectionEvent::Disconnected { reason } => {
                     info!("[gatt] Disconnected: {:?}", reason);
                     break;
                 }
+                ConnectionEvent::Gatt {
+                    connection: _,
+                    event,
+                } => match event {
+                    GattEvent::Read { value_handle } => {
+                        info!("[gatt] Server Write event on {:?}", value_handle);
+                    }
+                    GattEvent::Write { value_handle } => {
+                        info!("[gatt] Read event on {:?}", value_handle);
+                    }
+                },
             }
-            Either::Second(event) => match event {
-                Ok(GattEvent::Write { value_handle, .. }) => {
-                    info!("[gatt] Server Write event on {:?}", value_handle);
-                }
-                Ok(GattEvent::Read { value_handle, .. }) => {
-                    info!("[gatt] Read event on {:?}", value_handle);
-                }
-                Err(e) => {
-                    error!("[gatt] Error processing GATT events: {:?}", e);
-                }
-            },
         }
     }
     info!("Gatt server task finished");
