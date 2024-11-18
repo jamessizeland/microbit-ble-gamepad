@@ -15,7 +15,7 @@ use crate::io::{
     Irqs,
 };
 
-use super::gatt::GamepadServer;
+use super::BleServer;
 
 #[gatt_service(uuid = "7e701cf1-b1df-42a1-bb5f-6a1028c793b0")]
 pub struct StickService {
@@ -59,7 +59,7 @@ impl Axis {
 }
 
 pub async fn analog_stick_task(
-    server: &GamepadServer<'_>,
+    server: &BleServer<'_>,
     conn: &Connection<'_>,
     saadc: &mut Saadc<'_, 2>,
     display: &AsyncDisplay,
