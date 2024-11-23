@@ -41,7 +41,7 @@ microbit-bsp = { git = "https://github.com/jamessizeland/microbit-bsp.git", bran
 bt-hci = { version = "0.1.1", default-features = false, features = ["defmt"] }
 trouble-host = { git = "https://github.com/embassy-rs/trouble.git", features = [
     "defmt",
-] }
+], branch = "main" }
 static_cell = "2.1.0"
 
 [profile.release]

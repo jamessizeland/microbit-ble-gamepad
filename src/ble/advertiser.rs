@@ -1,30 +1,27 @@
 use defmt::info;
-use microbit_bsp::ble::SoftdeviceError;
 use trouble_host::prelude::*;
 
-use super::SdcPeripheral;
-
 /// BLE advertiser
-pub struct AdvertiserBuilder<'d> {
+pub struct AdvertiserBuilder<'d, C: Controller> {
     /// Name of the device
     name: &'d str,
-    peripheral: SdcPeripheral<'d>,
+    peripheral: Peripheral<'d, C>,
 }
 
-pub struct Advertiser<'d> {
+pub struct Advertiser<'d, C: Controller> {
     advertiser_data: [u8; 31],
     scan_data: [u8; 4],
-    peripheral: SdcPeripheral<'d>,
+    peripheral: Peripheral<'d, C>,
 }
 
 /// A BLE advertiser
-impl<'d> AdvertiserBuilder<'d> {
+impl<'d, C: Controller> AdvertiserBuilder<'d, C> {
     /// Create a new advertiser builder
-    pub fn new(name: &'d str, peripheral: SdcPeripheral<'d>) -> Self {
+    pub fn new(name: &'d str, peripheral: Peripheral<'d, C>) -> Self {
         Self { name, peripheral }
     }
     /// Build the advertiser
-    pub fn build(self) -> Result<Advertiser<'d>, Error> {
+    pub fn build(self) -> Result<Advertiser<'d, C>, Error> {
         let name: &str;
         if self.name.len() > 22 {
             name = &self.name[..22];
@@ -51,9 +48,9 @@ impl<'d> AdvertiserBuilder<'d> {
     }
 }
 
-impl<'d> Advertiser<'d> {
+impl<'d, C: Controller> Advertiser<'d, C> {
     /// Advertise and connect to a device with the given name
-    pub async fn advertise(&mut self) -> Result<Connection, BleHostError<SoftdeviceError>> {
+    pub async fn advertise(&mut self) -> Result<Connection<'d>, BleHostError<C::Error>> {
         let mut advertiser = self
             .peripheral
             .advertise(

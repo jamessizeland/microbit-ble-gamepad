@@ -6,7 +6,7 @@ use trouble_host::prelude::*;
 
 use crate::io::display::{self, DisplayFrame};
 
-use super::gatt::GamepadServer;
+use super::BleServer;
 
 #[gatt_service(uuid = "260279e7-a5dd-447b-9bd8-e624ef464d6e")]
 pub struct ButtonService {
@@ -38,7 +38,7 @@ pub async fn notify_button_state(
     button: &mut GamepadButton,
     connection: &Connection<'_>,
     display: &display::AsyncDisplay,
-    server: &GamepadServer<'_>,
+    server: &BleServer<'_>,
 ) -> Result<(), BleHostError<SoftdeviceError>> {
     let debounce = Duration::from_millis(50);
     info!("button {} service online", button.name);
@@ -92,7 +92,7 @@ impl GamepadButton {
 
 /// A struct containing all of the buttons on the microbit
 pub struct GamepadInputs {
-    server: &'static GamepadServer<'static>,
+    server: &'static BleServer<'static>,
     pub a: GamepadButton,
     pub b: GamepadButton,
     pub c: GamepadButton,
@@ -104,7 +104,7 @@ pub struct GamepadInputs {
 impl GamepadInputs {
     /// Create a new GamepadInputs struct with the given pins
     pub fn new(
-        server: &'static GamepadServer<'_>,
+        server: &'static BleServer<'_>,
         a: Button,
         b: Button,
         c: Button,
