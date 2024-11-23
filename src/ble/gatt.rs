@@ -43,7 +43,7 @@ impl Server<'static, 'static, BleController> {
     {
         spawner.must_spawn(mpsl_task(mpsl));
 
-        let address = Address::random([0x41, 0x5A, 0xE3, 0x1E, 0x83, 0xE7]);
+        let address = Address::random([0x42, 0x5A, 0xE3, 0x1E, 0x83, 0xE7]);
         info!("Our address = {:?}", address);
 
         let resources = {
@@ -84,10 +84,22 @@ pub async fn gatt_server_task(server: &BleServer<'_>, conn: &Connection<'_>) {
                 }
                 ConnectionEvent::Gatt { event, .. } => match event {
                     GattEvent::Read { value_handle } => {
-                        info!("[gatt] Server Write event on {:?}", value_handle);
+                        if value_handle == server.player.index.handle {
+                            let value = server.get(&server.player.index);
+                            info!(
+                                "[gatt] Read Event to Player Index Characteristic: {:?}",
+                                value
+                            );
+                        }
                     }
                     GattEvent::Write { value_handle } => {
-                        info!("[gatt] Read event on {:?}", value_handle);
+                        if value_handle == server.player.index.handle {
+                            let value = server.get(&server.player.index);
+                            info!(
+                                "[gatt] Write Event to Player Index Characteristic: {:?}",
+                                value
+                            );
+                        }
                     }
                 },
             }

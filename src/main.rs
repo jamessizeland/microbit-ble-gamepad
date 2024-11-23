@@ -69,7 +69,6 @@ async fn main(spawner: Spawner) {
             let gatt = gatt_server_task(server, &conn);
             let buttons = buttons_task(&mut gamepad_buttons, &conn, &display);
             let analog = analog_stick_task(server, &conn, &mut analog_stick, &display);
-            // futures::pin_mut!(gatt, buttons, analog);
             embassy_futures::select::select3(gatt, buttons, analog).await;
             speaker.play_tune(Tune::Disconnect).await;
         }
