@@ -51,7 +51,7 @@ impl<'d, C: Controller> AdvertiserBuilder<'d, C> {
 impl<'d, C: Controller> Advertiser<'d, C> {
     /// Advertise and connect to a device with the given name
     pub async fn advertise(&mut self) -> Result<Connection<'d>, BleHostError<C::Error>> {
-        let mut advertiser = self
+        let advertiser = self
             .peripheral
             .advertise(
                 &Default::default(),

@@ -32,16 +32,15 @@ embassy-time = { version = "^0.3.0", default-features = false, features = [
 ] }
 
 # nrf52833 dependencies
-microbit-bsp = { git = "https://github.com/jamessizeland/microbit-bsp.git", branch = "trouble", features = [
-    "trouble",
-] }
-# microbit-bsp = { path = "../microbit-bsp", features = ["trouble"] }
+# microbit-bsp = { git = "https://github.com/jamessizeland/microbit-bsp.git", branch = "trouble", features = [
+#     "trouble",
+# ] }
+microbit-bsp = { path = "../microbit-bsp", features = ["trouble"] }
 
 # BLE dependencies
-bt-hci = { version = "0.1.1", default-features = false, features = ["defmt"] }
 trouble-host = { git = "https://github.com/embassy-rs/trouble.git", features = [
     "defmt",
-], branch = "main" }
+], rev = "07fa452e836f07a302596edb6a61e060d242e4ea" }
 static_cell = "2.1.0"
 
 [profile.release]

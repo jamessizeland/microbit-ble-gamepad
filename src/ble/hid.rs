@@ -45,7 +45,7 @@ pub async fn notify_button_state(
     loop {
         button.input.wait_for_low().await;
         info!("button {} pressed", button.name);
-        server.notify(&button.ble_handle, connection, &true).await?;
+        button.ble_handle.notify(server, connection, &true).await?;
         display
             .display(
                 DisplayFrame::Letter(button.name),
@@ -55,9 +55,7 @@ pub async fn notify_button_state(
         Timer::after(debounce).await;
         button.input.wait_for_high().await;
         info!("button {} released", button.name);
-        server
-            .notify(&button.ble_handle, connection, &false)
-            .await?;
+        button.ble_handle.notify(server, connection, &false).await?;
         Timer::after(debounce).await;
     }
 }

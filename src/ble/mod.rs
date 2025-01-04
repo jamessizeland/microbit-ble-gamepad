@@ -3,6 +3,7 @@ pub mod gatt;
 pub mod hid;
 pub mod stick;
 
+pub use gatt::BleServer;
 use microbit_bsp::ble::{MultiprotocolServiceLayer, SoftdeviceController};
 use trouble_host::prelude::*;
 
@@ -14,8 +15,6 @@ const CONNECTIONS_MAX: usize = 1;
 
 /// Max number of L2CAP channels.
 const L2CAP_CHANNELS_MAX: usize = 2; // Signal + att
-
-pub type BleServer<'d> = gatt::Server<'d, 'd, SoftdeviceController<'d>>;
 
 pub type BleController = SoftdeviceController<'static>;
 
