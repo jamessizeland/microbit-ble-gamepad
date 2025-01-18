@@ -11,7 +11,22 @@ Demo of bringing up Bluetooth Low Energy (BLE) using Embedded Rust, by turning a
 
 ![controller](./img/gamepad.jpg)
 
+### System libraries
+
+`nrf-sdc` requires clang.
+
+```bash
+# Linux
+sudo apt install llvm clang
+# Windows.
+choco install llvm 
+# Mac
+brew install llvm
+```
+
+
 ## Setup
+
 
 ```bash
 cargo install cargo-binstall # binary installer tool
@@ -24,18 +39,7 @@ cargo run --release
 
 ## Troubleshooting
 
-`nrf-sdc` requires clang.
-
-```bash
-# Linux
-sudo apt install llvm
-# Windows.
-choco install llvm 
-# Mac
-brew install llvm
-```
-
-## Windows
+### Windows
 
 Once installed, you may need to set the LIBCLANG_PATH environment variable to the directory containing libclang.dll.
 
