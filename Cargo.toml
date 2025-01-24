@@ -14,10 +14,10 @@ defmt = "0.3.10"
 panic-probe = { version = "0.3", features = ["print-defmt"] }
 
 # embassy dependencies
-embassy-sync = { version = "0.6.0", default-features = false, features = [
+embassy-sync = { version = "0.6.2", default-features = false, features = [
     "defmt",
 ] }
-embassy-futures = { version = "0.1.0", default-features = false }
+embassy-futures = { version = "0.1.1" }
 embassy-executor = { version = "0.7.0", default-features = false, features = [
     "arch-cortex-m",
     "defmt",
@@ -37,10 +37,8 @@ microbit-bsp = { git = "https://github.com/jamessizeland/microbit-bsp.git", feat
 # microbit-bsp = { path = "../microbit-bsp", features = ["trouble"] }
 
 # BLE dependencies
-bt-hci = { version = "0.2.0", default-features = false, features = ["defmt"] }
-trouble-host = { git = "https://github.com/embassy-rs/trouble.git", features = [
-    "defmt",
-], rev = "770b1e801c0a06ba51a4eb9b9f5a393726f32f33" }
+#bt-hci = { version = "0.2.0", default-features = false, features = ["defmt"] }
+trouble-host = { git = "https://github.com/embassy-rs/trouble.git", features = ["defmt"] }
 static_cell = "2.1.0"
 
 [profile.release]
