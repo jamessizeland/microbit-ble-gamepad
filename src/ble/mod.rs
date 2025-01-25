@@ -18,8 +18,7 @@ const L2CAP_CHANNELS_MAX: usize = 2; // Signal + att
 
 pub type BleController = SoftdeviceController<'static>;
 
-pub type BleResources =
-    HostResources<BleController, CONNECTIONS_MAX, L2CAP_CHANNELS_MAX, L2CAP_MTU>;
+pub type BleResources = HostResources<CONNECTIONS_MAX, L2CAP_CHANNELS_MAX, L2CAP_MTU>;
 
 #[embassy_executor::task]
 pub async fn mpsl_task(mpsl: &'static MultiprotocolServiceLayer<'static>) -> ! {
