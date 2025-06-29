@@ -51,7 +51,7 @@ impl Axis {
         let new = -((new_raw - self.offset) / self.divider) as i8; // invert the value
         if new != self.old {
             self.old = new;
-            Some(new as i8)
+            Some(new)
         } else {
             None
         }
@@ -73,16 +73,17 @@ pub async fn analog_stick_task(
     let divider = 623;
     let mut x_axis = Axis::new(offset, divider);
     let mut y_axis = Axis::new(offset, divider);
+    let stick = &server.stick;
     loop {
         // read adc values for x and y, and if they have changed by a certain amount, notify
         // we are reducing the number of analogue stick levels to a range of -2 to 2
         saadc.sample(&mut buf).await;
         // display the x and y values on the led matrix
         if let Some(x) = x_axis.changed(buf[0]) {
-            server.notify(&server.stick.x, conn, &x).await?;
+            stick.x.notify(server, conn, &x).await?;
         }
         if let Some(y) = y_axis.changed(buf[1]) {
-            server.notify(&server.stick.y, conn, &y).await?;
+            stick.y.notify(server, conn, &y).await?;
         }
         if !(x_axis.old == 0 && y_axis.old == 0) {
             // only display if the stick is not centered

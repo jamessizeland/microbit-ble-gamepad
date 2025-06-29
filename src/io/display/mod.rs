@@ -69,7 +69,7 @@ impl AsyncDisplay {
 
 #[allow(unused)]
 pub enum DisplayFrame {
-    DisplayFrame(Frame<5, 5>),
+    Custom(Frame<5, 5>),
     /// Display a single pixel at the given coordinates, where (0,0) is the center of the display.
     Coord {
         x: i8,
@@ -89,7 +89,7 @@ pub enum DisplayFrame {
 impl DisplayFrame {
     fn to_frame(&self) -> Frame<5, 5> {
         match self {
-            DisplayFrame::DisplayFrame(frame) => frame.clone(),
+            DisplayFrame::Custom(frame) => *frame,
             DisplayFrame::Heart => bitmap::HEART,
             DisplayFrame::Smile => bitmap::SMILE,
             DisplayFrame::Sad => bitmap::SAD,

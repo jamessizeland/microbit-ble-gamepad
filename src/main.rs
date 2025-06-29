@@ -14,10 +14,10 @@ use microbit_bsp::{display::Brightness, embassy_nrf::gpio::Pin as _, Microbit};
 
 use crate::{
     ble::{
-        gatt::gatt_server_task,
+        advertiser::advertise,
+        gatt::{gatt_server_task, BleServer},
         hid::{buttons_task, GamepadInputs},
         stick::{analog_stick_task, init_analog_adc},
-        BleServer,
     },
     io::{
         audio::{AsyncAudio, Tune},
@@ -39,7 +39,7 @@ async fn main(spawner: Spawner) {
         .ble
         .init(board.timer0, board.rng)
         .expect("BLE stack failed to initialize");
-    let (server, mut advertiser) =
+    let (server, mut peripheral) =
         BleServer::start_gatt(name, spawner, sdc, mpsl).expect("Failed to start GATT server");
 
     let mut gamepad_buttons = GamepadInputs::new(
@@ -61,7 +61,7 @@ async fn main(spawner: Spawner) {
     loop {
         display.display(QuestionMark, Duration::from_secs(2)).await;
         // advertise for connections
-        if let Ok(conn) = advertiser.advertise().await {
+        if let Ok(conn) = advertise("Rust Gamepad", &mut peripheral).await {
             let pause = Duration::from_secs(1);
             speaker.play_tune(Tune::Connect).await;
             display.display_blocking(Heart, pause).await;
